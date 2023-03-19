@@ -63,16 +63,23 @@ function createRateLimiter() {
   return limiter;
 }
 
-async function downloadImages(data, app) {
+async function downloadImages(data) {
   const limiter = createRateLimiter();
-
-  // Initialize the middleware with app.use(limiter)
-  app.use(limiter);
 
   for (const item of data) {
     const basePath = `images/${item['Nr.']}`;
     const query = `${item['Nume Produs']} glasses eyewear`;
-    await limiter.use(downloadImage(query, basePath));
+
+    // Wrap the downloadImage function with a Promise
+    const limitedDownloadImage = () => new Promise((resolve, reject) => {
+      limiter(() => {
+        downloadImage(query, basePath)
+          .then(resolve)
+          .catch(reject);
+      });
+    });
+
+    await limitedDownloadImage();
   }
 }
 
