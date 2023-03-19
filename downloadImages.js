@@ -3,6 +3,7 @@ const fs = require('fs');
 const axios = require('axios');
 const rateLimit = require("express-rate-limit");
 const path = require('path');
+const Bottleneck = require('bottleneck'); // Add this line
 
 async function downloadImage(query, basePath) {
   try {
@@ -48,38 +49,18 @@ async function downloadImage(query, basePath) {
   }
 }
 
-function createRateLimiter() {
-  // limit requests to 4 per minute without stats and 4 per hour with stats
-  const limiter = rateLimit({
-    windowMs: 60000, // 1 minute
-    max: 4, // limit each IP to 4 requests per windowMs
-    skipSuccessfulRequests: true, // skip counting successful requests
-    keyGenerator: function (req, res) {
-      // key by IP address and query params
-      return req.ip + req.query.engine + req.query.format + req.query.limit + req.query.stats + req.query.q;
-    },
-  });
-
-  return limiter;
-}
-
 async function downloadImages(data) {
-  const limiter = createRateLimiter();
+  // Create a new limiter instance
+  const limiter = new Bottleneck({
+    minTime: 60000 / 4, // 4 requests per minute
+  });
 
   for (const item of data) {
     const basePath = `images/${item['Nr.']}`;
     const query = `${item['Nume Produs']} glasses eyewear`;
 
-    // Wrap the downloadImage function with a Promise
-    const limitedDownloadImage = () => new Promise((resolve, reject) => {
-      limiter(() => {
-        downloadImage(query, basePath)
-          .then(resolve)
-          .catch(reject);
-      });
-    });
-
-    await limitedDownloadImage();
+    // Schedule the downloadImage function using the limiter
+    await limiter.schedule(() => downloadImage(query, basePath));
   }
 }
 
