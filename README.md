@@ -7,6 +7,7 @@
  - Node.js (version 14 or higher)
  - A Presearch API key
  - Installation
+ 
 ✨ To install the dependencies, run:
 
 ```sh
