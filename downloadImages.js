@@ -1,13 +1,19 @@
 require('dotenv').config();
 const fs = require('fs');
 const axios = require('axios');
-const rateLimit = require("express-rate-limit");
 const path = require('path');
 const Bottleneck = require('bottleneck'); // Add this line
 
 async function downloadImage(query, basePath) {
   try {
-    const response = await axios.get(`https://api.presearch.org/search?engine=images&format=json&limit=1&q=${query}&stats=true`, {
+    const response = await axios.get('https://api.presearch.org/search', {
+      params: {
+        engine: 'images',
+        format: 'json',
+        limit: 1,
+        q: query,
+        stats: 'true'
+      },
       headers: {
         Authorization: `Bearer ${process.env.PRESEARCH_API_KEY}`
       }
